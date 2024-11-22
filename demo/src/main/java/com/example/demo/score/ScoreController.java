@@ -25,7 +25,7 @@ public class ScoreController {
 
     @GetMapping("/leaderboard")
     public List<Score> getLeaderBoard() {
-        return scoreRepository.findTop10Scores();
+        return scoreRepository.findTop10ByOrderByScoreDesc();
     }
 
 }

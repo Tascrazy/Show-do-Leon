@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import QuestionCard from '../../components/QuestionCard';
-import ScoreBoard from '../../components/ScoreBoard';
+import QuestionBox from '../../components/QuestionBox';
+import Score from '../../components/Score';
 import { fetchQuestion } from '../../services/api';
 import { useRouter } from 'next/navigation';
 
@@ -10,16 +10,41 @@ export default function Game() {
     const [question, setQuestion] = useState(null);
     const [score, setScore] = useState(0);
     const [level, setLevel] = useState('easy');
+    const [correctAnswers, setCorrectAnswers] = useState(0);
+    const [usedQuestions, setUsedQuestions] = useState([]);
     const router = useRouter();
 
     useEffect(() => {
-        fetchQuestion(level).then(setQuestion);
-    }, [level]);
+        const getNewQuestion = async () => {
+            let newQuestion;
+            do {
+                newQuestion = await fetchQuestion(level);
+            } while (usedQuestions.some(q => q.id === newQuestion.id));
+
+            setQuestion(newQuestion);
+            setUsedQuestions([...usedQuestions, newQuestion]);
+        }
+        getNewQuestion();
+    }, [level, correctAnswers]);
 
     const handleAnswer = (selectedOption) => {
-        if (selectedOption === question.correctOption) {
-            setScore(score + 10);
-            setLevel(level === 'easy' ? 'medium' : 'hard');
+        if (selectedOption === question.correctAnswer) {
+
+            const scoreValue = level === 'easy' ? 10 : level === 'medium' ? 20 : 40;
+            setScore(score + scoreValue);
+
+            const updatedCorrectAnswers = correctAnswers + 1;
+
+            if (updatedCorrectAnswers === 3) {
+                setCorrectAnswers(0);
+                if (level === 'easy') {
+                    setLevel('medium');
+                } else if (level === 'medium') {
+                    setLevel('hard');
+                }
+            } else {
+                setCorrectAnswers(updatedCorrectAnswers);
+            }
         } else {
             router.push(`/result?score=${score}`);
         }
@@ -28,7 +53,7 @@ export default function Game() {
     return (
         <div className="p-4">
             {question ? (
-                <QuestionCard
+                <QuestionBox
                     question={question.questionText}
                     options={[question.optionA, question.optionB, question.optionC, question.optionD]}
                     onAnswer={handleAnswer}
@@ -36,7 +61,8 @@ export default function Game() {
             ) : (
                 <p>Carregando...</p>
             )}
-            <ScoreBoard score={score} />
+            <Score score={score} />
+            <p className="mt-2">Nível atual: {level.toUpperCase()}</p>
         </div>
     );
 }

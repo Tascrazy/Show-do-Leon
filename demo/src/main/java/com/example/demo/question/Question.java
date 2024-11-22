@@ -26,6 +26,9 @@ public class Question {
     private Long id;
 
     @Column(nullable = false)
+    private String questionText;
+
+    @Column(nullable = false)
     private String optionA;
 
     @Column(nullable = false)
